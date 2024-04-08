@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { injectSpeedInsights } from '@vercel/speed-insights/sveltekit';
+
+	injectSpeedInsights();
 	// sass
 	import '$src/sass/main.scss';
 
@@ -20,33 +23,33 @@
 	import ConnectionProvider from '$src/components/Wallet/ConnectionProvider.svelte';
 	import WalletProvider from '$src/components/Wallet/WalletProvider.svelte';
 	// solana
+	import { decodeName } from '$sdk/sdk';
 	import LeftNavbar from '$src/components/Navigation/LeftNavbar.svelte';
 	import Notifications from '$src/components/Notification/Notifications.svelte';
-	import MapWrapper from '$src/components/ShipmentMap/MapWrapper.svelte';
-	import { clusterApiUrl } from '@solana/web3.js';
-	import { userStore } from '$src/stores/user';
-	import { walletStore } from '$src/stores/wallet';
-	import { decodeName } from '$sdk/sdk';
-	import { fetchForwarderAccount } from '$src/lib/forwarder';
-	import { fetchShipperAccount } from '$src/lib/shipper';
-	import { fetchCarrierAccount } from '$src/lib/carrier';
-	import { get } from 'svelte/store';
-	import { anchorStore } from '$src/stores/anchor';
-	import type { ApiShipmentAccount, FetchedShipment } from '$src/utils/account/shipment';
-	import { parseShipmentToApiShipment } from '$src/utils/parse/shipment';
-	import { searchableShipments } from '$src/stores/searchableShipments';
-	import type {
-		ApiForwardedShipmentAccount,
-		FetchedForwardedShipment
-	} from '$src/utils/account/forwardedShipment';
-	import { parseForwardedShipmentToApiForwardedShipment } from '$src/utils/parse/forwardedShipment';
-	import { forwardedShipmentsMeta } from '$src/stores/forwarderShipments';
 	import {
 		createNotification,
 		removeNotification
 	} from '$src/components/Notification/notificationsStore';
+	import MapWrapper from '$src/components/ShipmentMap/MapWrapper.svelte';
+	import { fetchCarrierAccount } from '$src/lib/carrier';
+	import { fetchForwarderAccount } from '$src/lib/forwarder';
+	import { fetchShipperAccount } from '$src/lib/shipper';
+	import { anchorStore } from '$src/stores/anchor';
 	import { awaitedConfirmation } from '$src/stores/confirmationAwait';
+	import { forwardedShipmentsMeta } from '$src/stores/forwarderShipments';
+	import { searchableShipments } from '$src/stores/searchableShipments';
+	import { userStore } from '$src/stores/user';
+	import { walletStore } from '$src/stores/wallet';
 	import { web3Store } from '$src/stores/web3';
+	import type {
+		ApiForwardedShipmentAccount,
+		FetchedForwardedShipment
+	} from '$src/utils/account/forwardedShipment';
+	import type { ApiShipmentAccount, FetchedShipment } from '$src/utils/account/shipment';
+	import { parseForwardedShipmentToApiForwardedShipment } from '$src/utils/parse/forwardedShipment';
+	import { parseShipmentToApiShipment } from '$src/utils/parse/shipment';
+	import { clusterApiUrl } from '@solana/web3.js';
+	import { get } from 'svelte/store';
 
 	let wallets: Adapter[];
 	// it's a solana devnet cluster, but consider changing it to more performant provider
@@ -76,7 +79,7 @@
 
 		const signature = await connection.requestAirdrop(publicKey!, SOL_IN_LAMPORTS);
 
-		console.log(signature)
+		console.log(signature);
 
 		const latestBlockHash = await connection.getLatestBlockhash();
 
@@ -89,15 +92,16 @@
 		return signature;
 	};
 
-
 	$: if (isWalletConnected && SHOULD_REQUEST_AIRDROP) {
 		requiresAirdrop().then((res) => {
 			if (res) {
-				airDropSol().then((signature) => {
-					createNotification({ text: 'airdrop', type: 'success', removeAfter: 5000, signature })
-				}).catch(() => {
-					createNotification({ text: 'airdrop', type: 'failed', removeAfter: 3000 });
-				})
+				airDropSol()
+					.then((signature) => {
+						createNotification({ text: 'airdrop', type: 'success', removeAfter: 5000, signature });
+					})
+					.catch(() => {
+						createNotification({ text: 'airdrop', type: 'failed', removeAfter: 3000 });
+					});
 			}
 		});
 	}
