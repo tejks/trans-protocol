@@ -1,11 +1,12 @@
 <script lang="ts">
+	import type { OfferedShipment } from '$src/stores/offers';
 	import type { ApiShipmentOfferAccount } from '$src/utils/account/offer';
 	import clsx from 'clsx';
 	import { createEventDispatcher } from 'svelte';
 
-	export let offerAccount: ApiShipmentOfferAccount;
-	export let selectedAccount: string | undefined = undefined;
-	$: offer = offerAccount.account;
+	export let offerAccount: OfferedShipment;
+	export let selectedShipment: string | undefined = undefined;
+	$: offer = offerAccount.meta.account;
 
 	const dispatch = createEventDispatcher();
 
@@ -24,7 +25,7 @@
 	on:click
 	class={clsx(
 		'rounded-lg shadow cursor-pointer w-full',
-		selectedAccount === offerAccount.publicKey ? 'bg-secondary-100' : 'bg-white'
+		selectedShipment === offerAccount.shipment.publicKey ? 'bg-secondary-100' : 'bg-white'
 	)}
 >
 	<div class="px-4 py-5 sm:px-6">
