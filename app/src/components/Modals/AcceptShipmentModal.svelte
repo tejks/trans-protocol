@@ -130,6 +130,9 @@
 		<p class="text-neutral-600 text-sm max-w-sm mt-2">
 			You can send an encrypted message with contact information or other details.
 		</p>
+		<div class="text-neutral-600 mt-5 text-sm">
+			Disclaimer: The shipper and carrier cannot be on the same wallet!
+		</div>
 
 		<form use:form class="mt-8">
 			<Input name="message" placeholder="Enter message" required />
