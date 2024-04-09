@@ -1,27 +1,27 @@
 <script lang="ts">
-	import { get } from 'svelte/store';
-	import Modal from './Modal.svelte';
-	import { PublicKey } from '@solana/web3.js';
+	import { getSendMessageIx } from '$src/lib/channel';
+	import { getAcceptShipmentOfferTx } from '$src/lib/offer';
+	import { DF_MODULUS } from '$src/sdk/sdk';
 	import { anchorStore } from '$src/stores/anchor';
+	import type { OfferedShipment } from '$src/stores/offers';
 	import { walletStore } from '$src/stores/wallet';
 	import { web3Store } from '$src/stores/web3';
-	import { useSignAndSendTransaction } from '$src/utils/wallet/singAndSendTx';
-	import { createNotification } from '../Notification/notificationsStore';
-	import { getAcceptShipmentOfferTx } from '$src/lib/offer';
-	import type { OfferedShipment } from '$src/stores/offers';
-	import Input from '../Inputs/Input.svelte';
-	import Button from '../Buttons/Button.svelte';
-	import { createForm } from 'felte';
-	import { validator } from '@felte/validator-yup';
-	import * as yup from 'yup';
-	import { messageFormSchema as schema } from './schemas';
-	import { reporter } from '@felte/reporter-svelte';
-	import { createDiffieHellman } from 'diffie-hellman';
-	import { DF_BASE, DF_MODULUS } from '$src/sdk/sdk';
-	import { getSendMessageIx } from '$src/lib/channel';
-	import type { Program } from '@coral-xyz/anchor';
 	import type { Protocol } from '$src/utils/idl/types/protocol';
 	import { setLocalStorage } from '$src/utils/wallet/localStorage';
+	import { useSignAndSendTransaction } from '$src/utils/wallet/singAndSendTx';
+	import type { Program } from '@coral-xyz/anchor';
+	import { reporter } from '@felte/reporter-svelte';
+	import { validator } from '@felte/validator-yup';
+	import { PublicKey } from '@solana/web3.js';
+	import { createDiffieHellman } from 'diffie-hellman';
+	import { createForm } from 'felte';
+	import { get } from 'svelte/store';
+	import * as yup from 'yup';
+	import Button from '../Buttons/Button.svelte';
+	import Input from '../Inputs/Input.svelte';
+	import { createNotification, updateNotification } from '../Notification/notificationsStore';
+	import Modal from './Modal.svelte';
+	import { messageFormSchema as schema } from './schemas';
 
 	export let showModal: boolean;
 	export let offer: OfferedShipment;
@@ -35,11 +35,11 @@
 	) {
 		const { privateKey, sharedKey } = generateKeys();
 
-		setLocalStorage<string>(`carrier${shipment.toString()}` , privateKey.toString('hex'));
+		setLocalStorage<string>(`carrier${shipment.toString()}`, privateKey.toString('hex'));
 
 		return await getSendMessageIx(program, shipment, signer, privateKey, shipperSharedKey, message);
 	}
-	
+
 	function generateKeys() {
 		let dh = createDiffieHellman(DF_MODULUS);
 		dh.generateKeys();
@@ -47,7 +47,7 @@
 		const sharedKey = dh.getPublicKey();
 
 		return { privateKey, sharedKey };
-	}	
+	}
 	const handleAcceptOfferClick = async (message: string) => {
 		const { program } = get(anchorStore);
 		const wallet = get(walletStore);
@@ -73,9 +73,8 @@
 			offer.meta.account.no
 		);
 
-
-		console.log(offer.shipment.account.channel.shipper)
-		console.log(offer.shipment.account.channel.carrier)
+		console.log(offer.shipment.account.channel.shipper);
+		console.log(offer.shipment.account.channel.carrier);
 		const ix = await prepareSendMessageIx(
 			program,
 			$walletStore.publicKey!,
@@ -85,25 +84,37 @@
 		);
 
 		tx.add(ix);
-    
+
+		const id = createNotification({
+			text: 'Accept',
+			type: 'loading',
+			removeAfter: 5000
+		});
+
 		try {
 			const sig = await useSignAndSendTransaction(connection, wallet, tx);
 
-			createNotification({
-				text: 'Transaction send',
+			updateNotification(id, {
+				text: 'Accept',
 				type: 'success',
 				removeAfter: 5000,
 				signature: sig
 			});
+
+			showModal = false;
 		} catch (err) {
-			createNotification({ text: 'Transaction send', type: 'failed', removeAfter: 5000 });
+			updateNotification(id, {
+				text: 'Accept',
+				type: 'failed',
+				removeAfter: 5000
+			});
 		}
 	};
 
 	const { form, data } = createForm<yup.InferType<typeof schema>>({
 		extend: [reporter, validator({ schema })],
 		onSubmit: async (values) => {
-			handleAcceptOfferClick(values.message)
+			handleAcceptOfferClick(values.message);
 		},
 		initialValues: { message: '' }
 	});

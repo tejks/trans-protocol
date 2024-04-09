@@ -3,20 +3,18 @@
 	import ShipmentInformationModal from '$src/components/Modals/ShipmentInformationModal.svelte';
 	import {
 		createNotification,
-		removeNotification
+		updateNotification
 	} from '$src/components/Notification/notificationsStore';
 	import OrderListElement from '$src/components/Shipment/OrderListElement.svelte';
 	import ShipmentsLocations from '$src/components/ShipmentMap/ShipmentsLocations.svelte';
 	import { confirmShipmentTx } from '$src/lib/shipper';
 	import { acceptedShipmentOffers } from '$src/stores/acceptedOffers';
 	import { anchorStore } from '$src/stores/anchor';
-	import { awaitedConfirmation } from '$src/stores/confirmationAwait';
 	import { searchableShipments } from '$src/stores/searchableShipments';
 	import { web3Store } from '$src/stores/web3';
 	import type { ApiShipmentAccount } from '$src/utils/account/shipment';
 	import { useSignAndSendTransaction } from '$src/utils/wallet/singAndSendTx';
 	import { walletStore } from '$stores/wallet';
-	import { program } from '@coral-xyz/anchor/dist/cjs/native/system';
 	import { PublicKey } from '@solana/web3.js';
 	import clsx from 'clsx';
 	import { get } from 'svelte/store';
@@ -78,7 +76,7 @@
 		);
 
 		if (!$walletStore.publicKey) {
-			createNotification({ text: 'wallet not connected', type: 'failed', removeAfter: 5000 });
+			createNotification({ text: 'Wallet not connected', type: 'failed', removeAfter: 5000 });
 
 			walletStore.openModal();
 
@@ -86,10 +84,10 @@
 		}
 
 		if (!task) {
-			createNotification({ text: 'offer does not exist', type: 'failed', removeAfter: 5000 });
+			createNotification({ text: 'Offer does not exist', type: 'failed', removeAfter: 5000 });
 		}
 
-		const id = createNotification({ text: 'signing', type: 'loading', removeAfter: undefined });
+		const id = createNotification({ text: 'Confirm', type: 'loading', removeAfter: undefined });
 
 		const tx = await confirmShipmentTx(
 			program,
@@ -104,18 +102,9 @@
 		try {
 			const signature = await useSignAndSendTransaction(connection, wallet, tx);
 
-			createNotification({ text: 'Tx send', type: 'success', removeAfter: 5000, signature });
-			removeNotification(id);
-
-			const confirmation = createNotification({
-				text: 'waiting for confirmation',
-				type: 'loading',
-				removeAfter: 30000
-			});
-			awaitedConfirmation.set(confirmation);
+			updateNotification(id, { text: 'Confirm', type: 'success', removeAfter: 5000, signature });
 		} catch (err) {
-			createNotification({ text: 'Signing', type: 'failed', removeAfter: 5000 });
-			removeNotification(id);
+			updateNotification(id, { text: 'Confirm', type: 'failed', removeAfter: 5000 });
 		}
 	}
 </script>

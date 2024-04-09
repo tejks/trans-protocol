@@ -116,7 +116,7 @@
 			const latestBlockHash = await connection.getLatestBlockhash();
 
 			const confirmId = createNotification({
-				text: 'confirm',
+				text: 'Confirm',
 				type: 'loading',
 				removeAfter: undefined
 			});
@@ -130,19 +130,19 @@
 			removeNotification(confirmId);
 			if (confirmation.value.err) {
 				createNotification({
-					text: 'create',
+					text: 'Create',
 					type: 'failed',
 					removeAfter: 5000
 				});
 			} else {
 				createNotification({
-					text: 'create',
+					text: 'Create',
 					type: 'success',
 					removeAfter: 5000
 				});
 
 				createNotification({
-					text: 'redirecting',
+					text: 'Redirecting',
 					type: 'loading',
 					removeAfter: 5000
 				});

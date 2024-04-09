@@ -22,7 +22,6 @@
 	import { fetchShipperAccount, getCreateShipmentTx } from '$src/lib/shipper';
 	import { DF_MODULUS, getShipmentAddress } from '$src/sdk/sdk';
 	import { anchorStore } from '$src/stores/anchor';
-	import { awaitedConfirmation } from '$src/stores/confirmationAwait';
 	import { defaultLocation } from '$src/stores/locationsPick';
 	import { walletStore } from '$src/stores/wallet';
 	import { web3Store } from '$src/stores/web3';
@@ -167,7 +166,7 @@
 		if (!$walletStore.publicKey) {
 			showModal = false;
 
-			createNotification({ text: 'wallet not connected', type: 'failed', removeAfter: 5000 });
+			createNotification({ text: 'Wallet not connected', type: 'failed', removeAfter: 5000 });
 
 			walletStore.openModal();
 
@@ -204,7 +203,11 @@
 			width = shitCheck(dimensions.volume);
 		}
 
-		const id = createNotification({ text: 'Signing', type: 'loading', removeAfter: undefined });
+		const id = createNotification({
+			text: 'Create',
+			type: 'loading',
+			removeAfter: undefined
+		});
 
 		const tx = await getCreateShipmentTx(
 			program,
@@ -249,20 +252,15 @@
 			const signature = await useSignAndSendTransaction(connection, wallet, tx);
 
 			updateNotification(id, {
-				text: 'Creating shipment',
+				text: 'Create',
 				type: 'success',
 				removeAfter: 5000,
 				signature
 			});
 
-			const confirmation = createNotification({
-				text: 'waiting for confirmation',
-				type: 'loading',
-				removeAfter: 30000
-			});
-			awaitedConfirmation.set(confirmation);
+			goto('/shipmentsMap');
 		} catch (err) {
-			updateNotification(id, { text: 'Creating shipment', type: 'failed', removeAfter: 5000 });
+			updateNotification(id, { text: 'Create', type: 'failed', removeAfter: 5000 });
 		}
 	}
 

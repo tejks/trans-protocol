@@ -28,7 +28,7 @@
 	import Notifications from '$src/components/Notification/Notifications.svelte';
 	import {
 		createNotification,
-		removeNotification
+		updateNotification
 	} from '$src/components/Notification/notificationsStore';
 	import MapWrapper from '$src/components/ShipmentMap/MapWrapper.svelte';
 	import { fetchCarrierAccount } from '$src/lib/carrier';
@@ -36,7 +36,6 @@
 	import { fetchShipperAccount } from '$src/lib/shipper';
 	import { acceptedShipmentsOffersMeta } from '$src/stores/acceptedOffers';
 	import { anchorStore } from '$src/stores/anchor';
-	import { awaitedConfirmation } from '$src/stores/confirmationAwait';
 	import { forwardedShipmentsMeta } from '$src/stores/forwarderShipments';
 	import { shipmentsOffersMeta } from '$src/stores/offers';
 	import { searchableShipments } from '$src/stores/searchableShipments';
@@ -88,8 +87,6 @@
 
 		const signature = await connection.requestAirdrop(publicKey!, SOL_IN_LAMPORTS);
 
-		console.log(signature);
-
 		const latestBlockHash = await connection.getLatestBlockhash();
 
 		await connection.confirmTransaction({
@@ -103,13 +100,27 @@
 
 	$: if (isWalletConnected && SHOULD_REQUEST_AIRDROP) {
 		requiresAirdrop().then((res) => {
+			const id = createNotification({
+				text: 'Airdrop',
+				type: 'loading',
+				removeAfter: 5000
+			});
 			if (res) {
 				airDropSol()
 					.then((signature) => {
-						createNotification({ text: 'airdrop', type: 'success', removeAfter: 5000, signature });
+						updateNotification(id, {
+							text: 'Airdrop',
+							type: 'success',
+							removeAfter: 3000,
+							signature
+						});
 					})
 					.catch(() => {
-						createNotification({ text: 'airdrop', type: 'failed', removeAfter: 3000 });
+						updateNotification(id, {
+							text: 'Airdrop',
+							type: 'failed',
+							removeAfter: 3000
+						});
 					});
 			}
 		});
@@ -156,14 +167,6 @@
 
 				const shipper = event.shipper;
 
-				if ($walletStore.publicKey && shipper.toString() === $walletStore.publicKey.toString()) {
-					const id = $awaitedConfirmation;
-					if (id) {
-						removeNotification(id);
-					}
-					createNotification({ text: 'Create', type: 'success', removeAfter: 5000 });
-				}
-
 				searchableShipments.extend({
 					...parsedShipment,
 					searchParams: parsedShipment.account.shipment.details.priority.toString()
@@ -185,14 +188,6 @@
 				};
 
 				const buyer = event.buyer;
-
-				if ($walletStore.publicKey && buyer.toString() === $walletStore.publicKey.toString()) {
-					const id = $awaitedConfirmation;
-					if (id) {
-						removeNotification(id);
-					}
-					createNotification({ text: 'Buy', type: 'success', removeAfter: 5000 });
-				}
 
 				forwardedShipmentsMeta.update((meta) => {
 					meta.push(parsedForwardedShipment);
@@ -223,14 +218,6 @@
 			};
 
 			const offerer = event.from;
-
-			if ($walletStore.publicKey && offerer.toString() === $walletStore.publicKey.toString()) {
-				const id = $awaitedConfirmation;
-				if (id) {
-					removeNotification(id);
-				}
-				createNotification({ text: 'Offer', type: 'success', removeAfter: 5000 });
-			}
 
 			const shipment = event.shipment.toString();
 			forwardedShipmentsMeta.update((meta) => {
@@ -272,14 +259,6 @@
 			};
 
 			const carrier = event.to;
-
-			if ($walletStore.publicKey && carrier.toString() === $walletStore.publicKey.toString()) {
-				const id = $awaitedConfirmation;
-				if (id) {
-					removeNotification(id);
-				}
-				createNotification({ text: 'Accept', type: 'success', removeAfter: 5000 });
-			}
 
 			const shipment = event.shipment.toString();
 			shipmentsOffersMeta.update((meta) => {

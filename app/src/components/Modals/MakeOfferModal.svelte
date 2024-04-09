@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { getMakeOfferTx } from '$lib/forwarder';
 	import { anchorStore } from '$src/stores/anchor';
-	import { awaitedConfirmation } from '$src/stores/confirmationAwait';
 	import { walletStore } from '$src/stores/wallet';
 	import { web3Store } from '$src/stores/web3';
 	import type { ApiCarrierAccount } from '$src/utils/account/carrier';
@@ -12,7 +11,7 @@
 	import { get } from 'svelte/store';
 	import Button from '../Buttons/Button.svelte';
 	import DecimalInput from '../Inputs/DecimalInput.svelte';
-	import { createNotification, removeNotification } from '../Notification/notificationsStore';
+	import { createNotification, updateNotification } from '../Notification/notificationsStore';
 	import Modal from './Modal.svelte';
 
 	export let showModal: boolean;
@@ -40,7 +39,7 @@
 		if (!$walletStore.publicKey) {
 			showModal = false;
 
-			createNotification({ text: 'wallet not connected', type: 'failed', removeAfter: 5000 });
+			createNotification({ text: 'Wallet not connected', type: 'failed', removeAfter: 5000 });
 
 			walletStore.openModal();
 
@@ -53,8 +52,6 @@
 			return;
 		}
 
-		const id = createNotification({ text: 'signing', type: 'loading', removeAfter: undefined });
-
 		const tx = await getMakeOfferTx(
 			program,
 			new BN(price * 10 ** 9),
@@ -64,23 +61,20 @@
 			new PublicKey(carrierAccount.account.authority)
 		);
 
+		const id = createNotification({
+			text: 'Making offer',
+			type: 'loading',
+			removeAfter: 5000
+		});
+
 		try {
 			const signature = await useSignAndSendTransaction(connection, wallet, tx);
 
-			createNotification({ text: 'Tx send', type: 'success', removeAfter: 5000, signature });
-			removeNotification(id);
-
-			const confirmation = createNotification({
-				text: 'waiting for confirmation',
-				type: 'loading',
-				removeAfter: 30000
-			});
-			awaitedConfirmation.set(confirmation);
+			updateNotification(id, { text: 'Offer', type: 'success', removeAfter: 5000, signature });
 
 			showModal = false;
 		} catch (err) {
-			createNotification({ text: 'Signing', type: 'failed', removeAfter: 5000 });
-			removeNotification(id);
+			updateNotification(id, { text: 'Offer', type: 'failed', removeAfter: 5000 });
 		}
 	}
 </script>

@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { getBuyShipmentTx } from '$lib/forwarder';
 	import { anchorStore } from '$src/stores/anchor';
-	import { awaitedConfirmation } from '$src/stores/confirmationAwait';
 	import { userStore } from '$src/stores/user';
 	import { walletStore } from '$src/stores/wallet';
 	import { web3Store } from '$src/stores/web3';
@@ -11,7 +10,7 @@
 	import { PublicKey } from '@solana/web3.js';
 	import { get } from 'svelte/store';
 	import Button from '../Buttons/Button.svelte';
-	import { createNotification, removeNotification } from '../Notification/notificationsStore';
+	import { createNotification, updateNotification } from '../Notification/notificationsStore';
 	import SummaryWrapper from '../SummaryWrapper.svelte';
 	import Modal from './Modal.svelte';
 
@@ -42,11 +41,9 @@
 		}
 
 		if (!isAccountNameValid(name)) {
-			createNotification({ text: 'invalid name', type: 'failed', removeAfter: 5000 });
+			createNotification({ text: 'Invalid name', type: 'failed', removeAfter: 5000 });
 			return;
 		}
-
-		const id = createNotification({ text: 'Signing', type: 'loading', removeAfter: undefined });
 
 		const tx = await getBuyShipmentTx(
 			program,
@@ -56,23 +53,16 @@
 			name!
 		);
 
+		const id = createNotification({ text: 'Buy', type: 'loading', removeAfter: undefined });
+
 		try {
 			const signature = await useSignAndSendTransaction(connection, wallet, tx);
 
-			removeNotification(id);
-			createNotification({ text: 'Transaction', type: 'success', removeAfter: 5000, signature });
+			updateNotification(id, { text: 'Buy', type: 'success', removeAfter: 5000, signature });
 
-			const confirmation = createNotification({
-				text: 'Confirmation',
-				type: 'loading',
-				removeAfter: 15000
-			});
-
-			awaitedConfirmation.set(confirmation);
 			showModal = false;
 		} catch (err) {
-			removeNotification(id);
-			createNotification({ text: 'Signing', type: 'failed', removeAfter: 5000 });
+			updateNotification(id, { text: 'Buy', type: 'failed', removeAfter: 5000 });
 		}
 	}
 
